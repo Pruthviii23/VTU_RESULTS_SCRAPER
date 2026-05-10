@@ -19,7 +19,7 @@ from openpyxl.styles import Alignment
 # LOAD USN LIST
 # =============================
 
-df = pd.read_excel("usn_list.xlsx")
+df = pd.read_excel("VTU/usn_list.xlsx")
 usn_list = df["USN"].tolist()
 
 # =============================
@@ -58,16 +58,27 @@ all_students = []
 # CAPTCHA SOLVER FUNCTION
 # =============================
 
-def solve_captcha():
+def solve_captcha(usn):
 
     while True:
         try:
+            # -------------------------
+            # ALWAYS re-enter USN
+            # -------------------------
+            usn_box = wait.until(EC.presence_of_element_located((By.NAME, "lns")))
+            usn_box.clear()
+            usn_box.send_keys(usn)
+
+            # -------------------------
             # locate captcha
+            # -------------------------
             captcha = wait.until(
                 EC.presence_of_element_located((By.XPATH, "//img[contains(@src,'captcha')]"))
             )
 
+            # -------------------------
             # crop captcha
+            # -------------------------
             location = captcha.location
             size = captcha.size
 
@@ -82,10 +93,14 @@ def solve_captcha():
             captcha_img = img.crop((left, top, right, bottom))
             captcha_img.save("temp.png")
 
+            # -------------------------
             # preprocess
+            # -------------------------
             processed = preprocess_image("temp.png")
 
+            # -------------------------
             # OCR
+            # -------------------------
             results = reader.readtext(processed)
 
             detected_text = ""
@@ -94,27 +109,36 @@ def solve_captcha():
 
             prediction = detected_text.strip()
 
-            # clean (KEEP CASE)
+            # -------------------------
+            # clean
+            # -------------------------
             prediction = re.sub(r'[^A-Za-z0-9]', '', prediction)
 
             if len(prediction) != 6:
+                print("Invalid OCR, retrying...")
                 driver.refresh()
                 time.sleep(1)
                 continue
 
             print(f"Captcha attempt: {prediction}")
 
+            # -------------------------
             # enter captcha
+            # -------------------------
             captcha_box = driver.find_element(By.NAME, "captchacode")
             captcha_box.clear()
             captcha_box.send_keys(prediction)
 
+            # -------------------------
             # submit
+            # -------------------------
             driver.find_element(By.ID, "submit").click()
 
             time.sleep(1)
 
+            # -------------------------
             # check failure
+            # -------------------------
             try:
                 alert = driver.switch_to.alert
                 if "Invalid captcha" in alert.text:
@@ -126,7 +150,9 @@ def solve_captcha():
             except NoAlertPresentException:
                 pass
 
-            # success if table appears
+            # -------------------------
+            # success check
+            # -------------------------
             wait.until(EC.presence_of_element_located((By.CLASS_NAME, "divTableRow")))
 
             print("✅ Captcha solved")
@@ -155,7 +181,7 @@ for i, usn in enumerate(usn_list, 1):
             usn_box.send_keys(usn)
 
             # solve captcha
-            success = solve_captcha()
+            success = solve_captcha(usn)
 
         except Exception as e:
             print("Retrying USN due to error:", e)
@@ -310,6 +336,6 @@ for student in all_students:
 for cell in ws[1]:
     cell.alignment = Alignment(horizontal="center")
 
-wb.save("vtu_results.xlsx")
+wb.save("VTU/vtu_results.xlsx")
 
-print("\nExcel file created: vtu_results.xlsx")
+print("\nExcel file created: VTU/vtu_results.xlsx")
