@@ -1,79 +1,115 @@
-# VTU Results Scraper 📊
+# 📊 VTU Results Scraper (Auto CAPTCHA Version)
 
-A Python automation tool that collects **VTU semester results for an entire class** directly from the official results portal and exports them into a **clean, structured Excel sheet**.
+A fully automated Python tool that fetches VTU semester results for an entire class — including **automatic CAPTCHA solving using OCR** — and exports everything into a clean Excel sheet.
 
-Instead of manually checking each student's result one by one, this script automates the process while still respecting the CAPTCHA requirement.
+No manual input required.
+
+---
+
+# 🚀 What This Tool Does
+
+* Takes a list of USNs (student IDs)
+* Opens the VTU results website
+* Automatically solves CAPTCHA using OCR
+* Retries until correct CAPTCHA is found
+* Scrapes student results
+* Saves everything into a structured Excel file
 
 ---
 
 # ✨ Features
 
-* 🔎 Automatically fetch results for multiple USNs
-* 📄 Clean, structured Excel output
-* 🧩 Handles **PEC and OEC electives correctly**
+* 🤖 **Automatic CAPTCHA solving (OCR-based)**
+* 🔁 Smart retry system until success
+* 🔎 Bulk result fetching for multiple students
+* 📄 Clean Excel output
+* 🧩 Correct PEC / OEC classification
 * 🧹 Ignores backlog subjects automatically
-* 📊 Organized subject grouping (Internals / Externals / Total / Result)
-* ⚡ Fast (entire class results in a few minutes)
+* 📊 Structured marks (Internals / Externals / Total / Result)
+* ⚡ Fully automated (no human input needed)
 
 ---
 
+# ⚠️ Important Notice
 
-# ⚙️ How It Works
+This tool interacts with a live university website.
 
-1. The script loads a list of **USNs from an Excel file**
-2. Opens the VTU results portal automatically
-3. Enters each USN
-4. Waits for the user to solve the CAPTCHA
-5. Scrapes the result page
-6. Extracts the first **6 semester subjects only**
-7. Categorizes electives as **PEC or OEC**
-8. Writes results into a formatted Excel sheet
+👉 Use responsibly:
+
+* Avoid excessive requests
+* Add delays if needed
+* Do not overload the server
 
 ---
 
 # 🧰 Requirements
 
-Install Python dependencies:
+## 1. Install Python
+
+* Python **3.8 or above**
+* Enable **“Add Python to PATH”**
+
+---
+
+## 2. Install Required Libraries
+
+Run:
 
 ```bash
-pip install selenium pandas openpyxl beautifulsoup4
+pip install selenium pandas openpyxl beautifulsoup4 easyocr opencv-python pillow
 ```
 
-You will also need:
+---
 
-* **Python 3.8+**
-* **Google Chrome**
-* **ChromeDriver** (matching your Chrome version)
+## 3. Install Google Chrome
 
-Download ChromeDriver:
-https://chromedriver.chromium.org/downloads
+Download and install Chrome if not already installed.
 
-Place the driver in the same folder as the script or ensure it is available in your system PATH.
+---
+
+## 4. Install ChromeDriver
+
+### Steps:
+
+1. Check Chrome version:
+
+```
+chrome://settings/help
+```
+
+2. Download matching version:
+   [https://chromedriver.chromium.org/downloads](https://chromedriver.chromium.org/downloads)
+
+3. Place `chromedriver.exe`:
+
+* In project folder OR
+* Add to system PATH
 
 ---
 
 # 📂 Project Structure
 
 ```
-VTU-Results-Scraper
+VTU-Results-Scraper/
 │
 ├── main.py
 ├── usn_list.xlsx
-├── vtu_results.xlsx (generated after running)
+├── vtu_results.xlsx (generated)
+├── dataset/              # (optional) saved captcha data
 └── README.md
 ```
 
 ---
 
-# 📝 Preparing the Input File
+# 📝 Step 1: Prepare Input File
 
-Create an Excel file named:
+Create:
 
 ```
 usn_list.xlsx
 ```
 
-Structure:
+Format:
 
 | USN        |
 | ---------- |
@@ -81,94 +117,128 @@ Structure:
 | 1XX22XX002 |
 | 1XX22XX003 |
 
-Only one column is required.
+👉 Only one column required
+👉 Column name must be **USN**
 
 ---
 
-# ▶️ Running the Script
+# ▶️ Step 2: Run the Script
 
-Run the script using:
-
-```bash
+```
 python main.py
 ```
 
-The workflow will look like this:
+---
+
+# ⚙️ How It Works (Behind the Scenes)
+
+For each student:
 
 ```
-Script enters USN
+Enter USN
 ↓
-You type CAPTCHA in the browser
+Capture CAPTCHA image
 ↓
-Press Submit
+Preprocess image (OpenCV)
 ↓
-Script scrapes results
+Run OCR (EasyOCR)
 ↓
-Script reloads page
+Submit prediction
 ↓
-Next USN
+If wrong → retry automatically
+↓
+If correct → scrape results
+↓
+Move to next student
 ```
-
-Repeat until all students are processed.
 
 ---
 
-# ⏱ Runtime
+# 🔁 CAPTCHA Solver Logic
 
-Approximate runtime for a class:
+* Uses **image preprocessing + OCR**
+* Filters invalid predictions
+* Automatically retries until success
+* No manual intervention required
 
-| Students | Time        |
-| -------- | ----------- |
-| 10       | ~40 seconds |
-| 50       | ~3 minutes  |
-| 70       | ~4 minutes  |
+---
+
+# ⏱ Estimated Runtime
+
+| Students | Time          |
+| -------- | ------------- |
+| 10       | ~1–2 minutes  |
+| 50       | ~5–8 minutes  |
+| 70       | ~8–12 minutes |
+
+👉 Depends on OCR success rate (~20–40%)
 
 ---
 
 # 🧠 How Electives Are Handled
 
-The VTU portal sorts subjects **by subject code**, which may mix PEC and OEC ordering.
+VTU may mix subject order.
 
-This scraper solves that by classifying subjects based on their **subject code patterns**, ensuring:
+This script correctly classifies:
+
+* **PEC (Program Elective)**
+* **OEC (Open Elective)**
+
+Based on subject codes → ensuring correct grouping.
+
+---
+
+# 📊 Output
+
+Generated file:
 
 ```
-PEC subjects → grouped under PEC
-OEC subjects → grouped under OEC
+vtu_results.xlsx
 ```
 
-This prevents incorrect swapping of elective results.
+Includes:
+
+* Name
+* USN
+* Core subjects (Internals / Externals / Total / Result)
+* PEC subject + marks
+* OEC subject + marks
 
 ---
 
-# ⚠️ CAPTCHA Notice
+# ⚠️ Limitations
 
-The VTU portal requires CAPTCHA verification for each request.
-
-This tool **does not bypass CAPTCHA**.
-
-You must manually enter the CAPTCHA for each student.
-
----
-
-# 📌 Limitations
-
-* Designed specifically for the **VTU results portal layout**
-* Assumes **6 subjects per semester**
-* Requires manual CAPTCHA entry
-* Website layout changes may require script updates
+* CAPTCHA solver is not perfect (OCR-based)
+* May retry multiple times before success
+* Depends on current VTU site structure
+* Website changes may break script
 
 ---
 
+# 💡 Tips for Better Performance
+
+* Keep system idle while running
+* Use good internet connection
+* Avoid running too many instances
+* If blocked → wait and retry later
+
+---
 
 # 🤝 Contributing
 
-Pull requests are welcome.
+Feel free to:
 
-If you find issues due to changes in the VTU portal layout, feel free to submit fixes or improvements.
+* Improve CAPTCHA accuracy
+* Optimize speed
+* Handle new VTU layouts
+
+Pull requests are welcome.
 
 ---
 
+# ⭐ If This Helped You
 
-# ⭐ If this helped you
-
-Give the repository a star so other VTU students can find it easily!
+Give the repo a star ⭐
+Helps other VTU students discover it.
+* Or a **resume bullet that actually stands out**
+* Or even turn this into a **mini AI project (custom captcha model)**
